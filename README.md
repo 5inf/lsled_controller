@@ -68,6 +68,24 @@ The application allows you to draw images, create text messages, configure anima
 2. Click **Send Images**.
 3. The controller converts all enabled slots into the legacy LSLED packet format and uploads them to the badge.
 
+### Running Locally
+
+Because Web Bluetooth requires a secure context, the controller should be served from `localhost` or HTTPS.
+
+A simple way to run it locally is:
+
+```bash
+python -m http.server -b 127.0.0.1 8080
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8080
+```
+
+in a Chromium-based browser such as Google Chrome or Microsoft Edge.
+
 ## Storage
 
 The controller stores the following information locally in the browser:

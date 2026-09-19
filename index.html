@@ -1,0 +1,1478 @@
+<!-- SPDX-License-Identifier: MIT 
+Copyright (c) 2026 five above infinity
+-->
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LSLED Controller</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #17212b;
+            --muted: #607080;
+            --line: #d7e0e7;
+            --paper: #f5f7f8;
+            --blue: #1769aa;
+            --green: #197a52;
+            --red: #a83333;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font: 15px/1.45 "Segoe UI", sans-serif;
+        }
+
+        header {
+            padding: 24px max(18px, calc((100vw - 900px) / 2));
+            background: linear-gradient(120deg, #12354a, var(--blue));
+            color: white;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        header p {
+            margin: 4px 0 0;
+            color: #d8edf9;
+        }
+
+        main {
+            width: min(900px, calc(100% - 24px));
+            margin: 18px auto 40px;
+        }
+
+        section {
+            padding: 16px;
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            box-shadow: 0 2px 8px #1932470d;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            align-items: center;
+        }
+
+        button {
+            border: 0;
+            border-radius: 4px;
+            padding: 10px 14px;
+            background: var(--blue);
+            color: white;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #0d4d81;
+        }
+
+        button.secondary {
+            background: #e8eef2;
+            color: var(--ink);
+        }
+
+        button.danger {
+            background: var(--red);
+        }
+
+        button.active {
+            outline: 3px solid #9fc8e6;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: .55;
+        }
+
+        .device {
+            flex: 1 1 240px;
+            min-width: 0;
+            color: var(--muted);
+        }
+
+        .device strong {
+            color: var(--ink);
+        }
+
+        .status {
+            flex: 1 1 100%;
+            min-height: 21px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .status.error {
+            color: var(--red);
+        }
+
+        .status.success {
+            color: var(--green);
+        }
+
+        .controller {
+            margin-top: 16px;
+        }
+
+        .controller h2 {
+            margin: 0 0 5px;
+            font-size: 19px;
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .global-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: end;
+            margin-top: 14px;
+        }
+
+        .slot-editor.disabled {
+            background: #f5f5f5;
+        }
+
+        .slot-editor.disabled .slot-controls,
+        .slot-editor.disabled .pixel-grid {
+            opacity: 0.4;
+        }
+
+        .slot-editors {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .slot-editor {
+            min-width: 0;
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+        }
+
+        .slot-editor h3 {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .slot-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: end;
+            margin-top: 8px;
+        }
+
+        .slot-controls button {
+            padding: 7px 9px;
+            font-size: 12px;
+        }
+
+        .slot-controls input[type="number"] {
+            width: 56px;
+            min-width: 56px;
+            padding: 6px;
+        }
+
+        .slot-controls select {
+            padding: 6px;
+            font-size: 12px;
+        }
+
+        .slot-text-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: end;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .font-preview {
+            min-width: 60px;
+            height: 34px;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: white;
+            color: var(--ink);
+        }
+
+        .slot-text-row.hidden {
+            display: none;
+        }
+
+        .slot-text-row input {
+            width: 220px;
+        }
+
+        .draw-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: end;
+            margin-top: 14px;
+        }
+
+        .slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slot-active {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        label {
+            display: grid;
+            gap: 4px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        select,
+        input[type="text"],
+        input[type="number"] {
+            height: 34px;
+            padding: 0 8px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            min-width: 70px;
+        }
+
+        .slot-text {
+            width: 200px;
+            min-width: 140px;
+        }
+
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(44, minmax(0, 1fr));
+            gap: 2px;
+            width: 100%;
+            margin-top: 14px;
+            padding: 8px;
+            background: var(--ink);
+            border-radius: 4px;
+            touch-action: none;
+        }
+
+        .pixel-grid.disabled {
+            opacity: 0.3;
+        }
+
+        .pixel {
+            width: auto;
+            aspect-ratio: 1;
+            min-width: 0;
+            padding: 0;
+            border: 1px solid #607080;
+            border-radius: 2px;
+            background: var(--paper);
+            touch-action: none;
+        }
+
+        .pixel.on {
+            background: #f4c542;
+            border-color: #f4c542;
+        }
+
+        @media (max-width: 700px) {
+            .slot-editors {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            main {
+                width: calc(100% - 12px);
+                margin-top: 8px;
+            }
+
+            header {
+                padding: 18px 12px;
+            }
+
+            section {
+                padding: 11px;
+            }
+
+            .pixel-grid {
+                gap: 1px;
+                padding: 4px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>LSLED Controller</h1>
+        <p>Fast 44 x 11 drawing controller for the FEE0/FEE1 legacy protocol.</p>
+    </header>
+    <main>
+        <section class="toolbar" aria-label="LSLED connection">
+            <button id="scan-button">Scan and connect</button>
+            <button id="disconnect-button" class="danger" disabled>Disconnect</button>
+            <div class="device">Device: <strong id="device-name">not connected</strong></div>
+            <div id="status" class="status" role="status">Ready to scan for an LSLED device.</div>
+        </section>
+        <section class="controller" aria-label="LSLED drawing controller">
+            <h2>Display images</h2>
+            <div class="hint">Each slot has its own image, speed, and effect. Brightness is global and applies to the
+                complete legacy upload.</div>
+            <div class="global-controls">
+                <label>Brightness preset <select id="brightness">
+                        <option value="0x00">100%</option>
+                        <option value="0x10">75%</option>
+                        <option value="0x20">50%</option>
+                        <option value="0x30">25%</option>
+                    </select></label>
+                <label>Brightness byte (0-255) <input id="brightness-value" type="number" min="0" max="255"
+                        value="0"></label>
+                <button id="send-button" disabled>Send all 8 images</button>
+                <button id="reset-storage-button" class="danger">
+                    Reset Settings
+                </button>
+            </div>
+            <div id="slot-editors" class="slot-editors"></div>
+        </section>
+    </main>
+    <script>
+        'use strict';
+
+        const FEE0 = '0000fee0-0000-1000-8000-00805f9b34fb';
+        const FEE1 = '0000fee1-0000-1000-8000-00805f9b34fb';
+        const WIDTH = 44;
+        const HEIGHT = 11;
+        const scanButton = document.getElementById('scan-button');
+        const disconnectButton = document.getElementById('disconnect-button');
+        const sendButton = document.getElementById('send-button');
+        const resetStorageButton = document.getElementById('reset-storage-button');
+        const brightnessInput = document.getElementById('brightness');
+        const brightnessValueInput = document.getElementById('brightness-value');
+        const slotEditors = document.getElementById('slot-editors');
+        const statusElement = document.getElementById('status');
+        const deviceNameElement = document.getElementById('device-name');
+        const slotImages = Array.from({ length: 8 }, () =>
+            Array.from({ length: HEIGHT }, () => Array(WIDTH).fill(false))
+        );
+        const slotConfigured = Array(8).fill(false);
+        const slotStorageKey = 'lsled-slot-images-v1';
+        const slotSettingsKey = 'lsled-slot-settings-v1';
+        const brightnessStorageKey = 'lsled-brightness-v1';
+        const slotSettings = Array.from({ length: 8 }, (_, slot) => ({
+            speed: 0,
+            mode: 4,
+            drawMode: 'draw',
+            enabled: slot === 0,
+            contentType: 'draw',
+            text: '',
+            font: 'led5x11'
+        }));
+        const slotEditorsByIndex = [];
+        let imageSaveTimer = null;
+        try {
+            const storedSlots = JSON.parse(localStorage.getItem(slotStorageKey) || 'null');
+            if (storedSlots && Array.isArray(storedSlots.images) && Array.isArray(storedSlots.configured)) {
+                for (let slot = 0; slot < 8; slot++) {
+                    if (Array.isArray(storedSlots.images[slot])) slotImages[slot] = storedSlots.images[slot];
+                    slotConfigured[slot] = storedSlots.configured[slot] === true;
+                }
+            }
+        } catch (_) { }
+
+        try {
+            const storedSettings = JSON.parse(localStorage.getItem(slotSettingsKey) || 'null');
+            if (Array.isArray(storedSettings)) {
+                for (let slot = 0; slot < 8; slot++) {
+                    const stored = storedSettings[slot];
+                    if (!stored) continue;
+                    slotSettings[slot].speed = Number.isInteger(stored.speed) ? Math.max(0, Math.min(7, stored.speed)) : 0;
+                    slotSettings[slot].mode = [0, 1, 2, 3, 4, 5, 6, 7, 8].includes(stored.mode) ? stored.mode : 4;
+                    slotSettings[slot].drawMode = stored.drawMode === 'erase' ? 'erase' : 'draw';
+                    slotSettings[slot].enabled = typeof stored.enabled === 'boolean' ? stored.enabled : true;
+                    slotSettings[slot].contentType =
+                        stored.contentType === 'text'
+                            ? 'text'
+                            : 'draw';
+
+                    slotSettings[slot].text =
+                        typeof stored.text === 'string'
+                            ? stored.text
+                            : '';
+
+                    slotSettings[slot].font =
+                        typeof stored.font === 'string'
+                            ? stored.font
+                            : 'sans';
+                }
+            }
+        } catch (_) { }
+
+        try {
+            const storedBrightness = Number(localStorage.getItem(brightnessStorageKey));
+            if (Number.isInteger(storedBrightness) && storedBrightness >= 0 && storedBrightness <= 255) {
+                brightnessValueInput.value = storedBrightness;
+                const preset = `0x${storedBrightness.toString(16).padStart(2, '0')}`;
+                brightnessInput.value = ['0x00', '0x10', '0x20', '0x30'].includes(preset) ? preset : '';
+            }
+        } catch (_) { }
+
+        const digitGlyphs = {
+            1: [0x02, 0x06, 0x02, 0x02, 0x02, 0x02, 0x07],
+            2: [0x06, 0x09, 0x01, 0x02, 0x04, 0x08, 0x0f],
+            3: [0x0e, 0x01, 0x01, 0x06, 0x01, 0x01, 0x0e],
+            4: [0x02, 0x06, 0x0a, 0x12, 0x1f, 0x02, 0x02],
+            5: [0x0f, 0x08, 0x08, 0x0e, 0x01, 0x01, 0x0e],
+            6: [0x06, 0x08, 0x08, 0x0e, 0x09, 0x09, 0x06],
+            7: [0x0f, 0x01, 0x02, 0x04, 0x04, 0x04, 0x04],
+            8: [0x06, 0x09, 0x09, 0x06, 0x09, 0x09, 0x06]
+        };
+
+        for (let slot = 0; slot < 8; slot++) {
+            if (slotConfigured[slot]) continue;
+            const glyph = digitGlyphs[slot + 1];
+            for (let y = 0; y < glyph.length; y++) {
+                for (let x = 0; x < 5; x++) {
+                    slotImages[slot][y + 2][x + 19] = Boolean(glyph[y] & (1 << (4 - x)));
+                }
+            }
+            slotConfigured[slot] = true;
+        }
+        try { saveSlotImages(true); } catch (_) { }
+
+        let writeCharacteristic = null;
+        let bluetoothDevice = null;
+        let drawing = false;
+        let reconnecting = false;
+        let manualDisconnect = false;
+
+        function setStatus(message, kind = '') {
+            statusElement.textContent = message;
+            statusElement.className = `status ${kind}`;
+        }
+
+        brightnessInput.addEventListener('change', () => {
+            brightnessValueInput.value = Number(brightnessInput.value);
+            localStorage.setItem(brightnessStorageKey, brightnessValueInput.value);
+        });
+
+        brightnessValueInput.addEventListener('change', () => {
+            const value = Math.max(0, Math.min(255, Number(brightnessValueInput.value) || 0));
+            brightnessValueInput.value = value;
+            const preset = `0x${value.toString(16).padStart(2, '0')}`;
+            brightnessInput.value = ['0x00', '0x10', '0x20', '0x30'].includes(preset) ? preset : '';
+            localStorage.setItem(brightnessStorageKey, value);
+        });
+
+        resetStorageButton.addEventListener(
+            'click',
+            () => {
+
+                if (
+                    !confirm(
+                        'Clear all saved images and settings?'
+                    )
+                ) {
+                    return;
+                }
+
+                localStorage.removeItem(
+                    slotStorageKey
+                );
+
+                localStorage.removeItem(
+                    slotSettingsKey
+                );
+
+                localStorage.removeItem(
+                    brightnessStorageKey
+                );
+
+                location.reload();
+            }
+        );
+
+        function updateSendButtonText() {
+            const activeCount = slotSettings.filter(
+                setting => setting.enabled
+            ).length;
+
+            sendButton.textContent =
+                activeCount === 1
+                    ? 'Send 1 image'
+                    : `Send ${activeCount} images`;
+        }
+
+        function saveSlotImages(immediate = false) {
+            if (immediate) {
+                if (imageSaveTimer) clearTimeout(imageSaveTimer);
+                imageSaveTimer = null;
+                localStorage.setItem(slotStorageKey, JSON.stringify({ images: slotImages, configured: slotConfigured }));
+                return;
+            }
+            if (imageSaveTimer) return;
+            imageSaveTimer = setTimeout(() => {
+                imageSaveTimer = null;
+                localStorage.setItem(slotStorageKey, JSON.stringify({ images: slotImages, configured: slotConfigured }));
+            }, 120);
+        }
+
+        function saveSlotSettings() {
+            localStorage.setItem(slotSettingsKey, JSON.stringify(slotSettings));
+        }
+
+        function paint(pixel, slot) {
+            if (
+                slotSettings[slot].contentType ===
+                'text'
+            ) {
+                return;
+            }
+
+            const x = Number(pixel.dataset.x);
+            const y = Number(pixel.dataset.y);
+            const pixels = slotImages[slot];
+            pixels[y][x] = slotSettings[slot].drawMode === 'draw';
+            slotConfigured[slot] = true;
+            saveSlotImages();
+            pixel.classList.toggle('on', pixels[y][x]);
+        }
+
+        function renderPixels(slot) {
+            for (const pixel of slotEditorsByIndex[slot].grid.children) {
+                const x = Number(pixel.dataset.x);
+                const y = Number(pixel.dataset.y);
+                pixel.classList.toggle('on', slotImages[slot][y][x]);
+            }
+        }
+
+        const FONT_DEFINITIONS = {
+            led5x11: {
+                label: 'LED 5x11',
+                renderer: 'bitmap'
+            },
+            sans: {
+                label: 'Sans',
+                renderer: 'canvas',
+                font: '10px sans-serif'
+            },
+            bold: {
+                label: 'Bold',
+                renderer: 'canvas',
+                font: 'bold 10px sans-serif'
+            },
+            mono: {
+                label: 'Monospace',
+                renderer: 'canvas',
+                font: '10px monospace'
+            },
+            serif: {
+                label: 'Serif',
+                renderer: 'canvas',
+                font: '10px serif'
+            },
+            narrow: {
+                label: 'Narrow',
+                renderer: 'canvas',
+                font: '9px "Arial Narrow", sans-serif'
+            },
+            small: {
+                label: 'Small',
+                renderer: 'canvas',
+                font: '8px sans-serif'
+            }
+        };
+
+        const FONT_5X11 = {
+
+            ' ': [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+
+            '0': [0x00, 0x00, 0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E, 0x00, 0x00],
+            '1': [0x00, 0x00, 0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E, 0x00, 0x00],
+            '2': [0x00, 0x00, 0x0E, 0x11, 0x01, 0x02, 0x04, 0x08, 0x1F, 0x00, 0x00],
+            '3': [0x00, 0x00, 0x1E, 0x01, 0x01, 0x0E, 0x01, 0x01, 0x1E, 0x00, 0x00],
+            '4': [0x00, 0x00, 0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02, 0x00, 0x00],
+            '5': [0x00, 0x00, 0x1F, 0x10, 0x10, 0x1E, 0x01, 0x01, 0x1E, 0x00, 0x00],
+            '6': [0x00, 0x00, 0x0E, 0x10, 0x10, 0x1E, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            '7': [0x00, 0x00, 0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08, 0x00, 0x00],
+            '8': [0x00, 0x00, 0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            '9': [0x00, 0x00, 0x0E, 0x11, 0x11, 0x0F, 0x01, 0x01, 0x0E, 0x00, 0x00],
+
+            'A': [0x00, 0x00, 0x04, 0x0A, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x00, 0x00],
+            'B': [0x00, 0x00, 0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E, 0x00, 0x00],
+            'C': [0x00, 0x00, 0x0E, 0x11, 0x10, 0x10, 0x10, 0x11, 0x0E, 0x00, 0x00],
+            'D': [0x00, 0x00, 0x1C, 0x12, 0x11, 0x11, 0x11, 0x12, 0x1C, 0x00, 0x00],
+            'E': [0x00, 0x00, 0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F, 0x00, 0x00],
+            'F': [0x00, 0x00, 0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x10, 0x00, 0x00],
+            'G': [0x00, 0x00, 0x0E, 0x11, 0x10, 0x17, 0x11, 0x11, 0x0F, 0x00, 0x00],
+            'H': [0x00, 0x00, 0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11, 0x00, 0x00],
+            'I': [0x00, 0x00, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x0E, 0x00, 0x00],
+            'J': [0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'K': [0x00, 0x00, 0x11, 0x12, 0x14, 0x18, 0x14, 0x12, 0x11, 0x00, 0x00],
+            'L': [0x00, 0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x1F, 0x00, 0x00],
+            'M': [0x00, 0x00, 0x11, 0x1B, 0x15, 0x15, 0x11, 0x11, 0x11, 0x00, 0x00],
+            'N': [0x00, 0x00, 0x11, 0x19, 0x15, 0x13, 0x11, 0x11, 0x11, 0x00, 0x00],
+            'O': [0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'P': [0x00, 0x00, 0x1E, 0x11, 0x11, 0x1E, 0x10, 0x10, 0x10, 0x00, 0x00],
+            'Q': [0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x15, 0x12, 0x0D, 0x00, 0x00],
+            'R': [0x00, 0x00, 0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11, 0x00, 0x00],
+            'S': [0x00, 0x00, 0x0F, 0x10, 0x10, 0x0E, 0x01, 0x01, 0x1E, 0x00, 0x00],
+            'T': [0x00, 0x00, 0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x00],
+            'U': [0x00, 0x00, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'V': [0x00, 0x00, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0A, 0x04, 0x00, 0x00],
+            'W': [0x00, 0x00, 0x11, 0x11, 0x11, 0x15, 0x15, 0x15, 0x0A, 0x00, 0x00],
+            'X': [0x00, 0x00, 0x11, 0x11, 0x0A, 0x04, 0x0A, 0x11, 0x11, 0x00, 0x00],
+            'Y': [0x00, 0x00, 0x11, 0x11, 0x0A, 0x04, 0x04, 0x04, 0x04, 0x00, 0x00],
+            'Z': [0x00, 0x00, 0x1F, 0x01, 0x02, 0x04, 0x08, 0x10, 0x1F, 0x00, 0x00],
+
+            'a': [0x00, 0x00, 0x00, 0x00, 0x0E, 0x01, 0x0F, 0x11, 0x0F, 0x00, 0x00],
+            'b': [0x00, 0x00, 0x10, 0x10, 0x16, 0x19, 0x11, 0x11, 0x1E, 0x00, 0x00],
+            'c': [0x00, 0x00, 0x00, 0x00, 0x0E, 0x11, 0x10, 0x11, 0x0E, 0x00, 0x00],
+            'd': [0x00, 0x00, 0x01, 0x01, 0x0D, 0x13, 0x11, 0x11, 0x0F, 0x00, 0x00],
+            'e': [0x00, 0x00, 0x00, 0x00, 0x0E, 0x11, 0x1F, 0x10, 0x0E, 0x00, 0x00],
+            'f': [0x00, 0x00, 0x06, 0x09, 0x08, 0x1C, 0x08, 0x08, 0x08, 0x00, 0x00],
+            'g': [0x00, 0x00, 0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0F, 0x01, 0x0E],
+            'h': [0x00, 0x00, 0x10, 0x10, 0x16, 0x19, 0x11, 0x11, 0x11, 0x00, 0x00],
+            'i': [0x00, 0x00, 0x04, 0x00, 0x0C, 0x04, 0x04, 0x04, 0x0E, 0x00, 0x00],
+            'j': [0x00, 0x02, 0x00, 0x06, 0x02, 0x02, 0x02, 0x02, 0x02, 0x12, 0x0C],
+            'k': [0x00, 0x00, 0x10, 0x10, 0x12, 0x14, 0x18, 0x14, 0x12, 0x00, 0x00],
+            'l': [0x00, 0x00, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x04, 0x0E, 0x00, 0x00],
+            'm': [0x00, 0x00, 0x00, 0x00, 0x1A, 0x15, 0x15, 0x15, 0x15, 0x00, 0x00],
+            'n': [0x00, 0x00, 0x00, 0x00, 0x16, 0x19, 0x11, 0x11, 0x11, 0x00, 0x00],
+            'o': [0x00, 0x00, 0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'p': [0x00, 0x00, 0x00, 0x00, 0x1E, 0x11, 0x11, 0x11, 0x1E, 0x10, 0x10],
+            'q': [0x00, 0x00, 0x00, 0x00, 0x0D, 0x13, 0x11, 0x11, 0x0F, 0x01, 0x01],
+            'r': [0x00, 0x00, 0x00, 0x00, 0x16, 0x19, 0x10, 0x10, 0x10, 0x00, 0x00],
+            's': [0x00, 0x00, 0x00, 0x00, 0x0F, 0x10, 0x0E, 0x01, 0x1E, 0x00, 0x00],
+            't': [0x00, 0x00, 0x08, 0x08, 0x1C, 0x08, 0x08, 0x09, 0x06, 0x00, 0x00],
+            'u': [0x00, 0x00, 0x00, 0x00, 0x11, 0x11, 0x11, 0x13, 0x0D, 0x00, 0x00],
+            'v': [0x00, 0x00, 0x00, 0x00, 0x11, 0x11, 0x11, 0x0A, 0x04, 0x00, 0x00],
+            'w': [0x00, 0x00, 0x00, 0x00, 0x11, 0x15, 0x15, 0x15, 0x0A, 0x00, 0x00],
+            'x': [0x00, 0x00, 0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11, 0x00, 0x00],
+            'y': [0x00, 0x00, 0x00, 0x00, 0x11, 0x11, 0x11, 0x11, 0x0F, 0x01, 0x0E],
+            'z': [0x00, 0x00, 0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F, 0x00, 0x00],
+
+            '-': [0x00, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+            '.': [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x06, 0x00, 0x00],
+            ':': [0x00, 0x00, 0x06, 0x06, 0x00, 0x06, 0x06, 0x00, 0x00, 0x00, 0x00],
+            '/': [0x00, 0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x00, 0x00, 0x00, 0x00],
+            '_': [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x00],
+            '!': [0x00, 0x00, 0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x04, 0x00, 0x00],
+            '?': [0x00, 0x00, 0x0E, 0x11, 0x01, 0x06, 0x04, 0x00, 0x04, 0x00, 0x00],
+            '#': [0x00, 0x00, 0x0A, 0x0A, 0x1F, 0x0A, 0x1F, 0x0A, 0x0A, 0x00, 0x00],
+
+            'Ä': [0x0A, 0x00, 0x04, 0x0A, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x00, 0x00],
+            'ä': [0x0A, 0x00, 0x00, 0x00, 0x0E, 0x01, 0x0F, 0x11, 0x0F, 0x00, 0x00],
+            'Ö': [0x0A, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'ö': [0x0A, 0x00, 0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'Ü': [0x0A, 0x00, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'ü': [0x0A, 0x00, 0x00, 0x00, 0x11, 0x11, 0x11, 0x13, 0x0D, 0x00, 0x00],
+
+            'ẞ': [0x00, 0x00, 0x0F, 0x10, 0x10, 0x1E, 0x11, 0x11, 0x1E, 0x00, 0x00],
+            'ß': [0x00, 0x00, 0x0E, 0x11, 0x10, 0x1E, 0x11, 0x11, 0x1E, 0x00, 0x00],
+
+            'à': [0x04, 0x02, 0x00, 0x00, 0x0E, 0x01, 0x0F, 0x11, 0x0F, 0x00, 0x00],
+            'á': [0x02, 0x04, 0x00, 0x00, 0x0E, 0x01, 0x0F, 0x11, 0x0F, 0x00, 0x00],
+            'è': [0x04, 0x02, 0x00, 0x00, 0x0E, 0x11, 0x1F, 0x10, 0x0E, 0x00, 0x00],
+            'é': [0x02, 0x04, 0x00, 0x00, 0x0E, 0x11, 0x1F, 0x10, 0x0E, 0x00, 0x00],
+            'ì': [0x04, 0x02, 0x04, 0x00, 0x0C, 0x04, 0x04, 0x04, 0x0E, 0x00, 0x00],
+            'í': [0x02, 0x04, 0x04, 0x00, 0x0C, 0x04, 0x04, 0x04, 0x0E, 0x00, 0x00],
+            'ò': [0x04, 0x02, 0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'ó': [0x02, 0x04, 0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'ù': [0x04, 0x02, 0x00, 0x00, 0x11, 0x11, 0x11, 0x13, 0x0D, 0x00, 0x00],
+            'ú': [0x02, 0x04, 0x00, 0x00, 0x11, 0x11, 0x11, 0x13, 0x0D, 0x00, 0x00],
+
+            'Å': [0x04, 0x0A, 0x04, 0x0A, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x00, 0x00],
+            'å': [0x04, 0x0A, 0x00, 0x00, 0x0E, 0x01, 0x0F, 0x11, 0x0F, 0x00, 0x00],
+            'Æ': [0x00, 0x00, 0x0F, 0x14, 0x14, 0x1F, 0x14, 0x14, 0x17, 0x00, 0x00],
+            'æ': [0x00, 0x00, 0x00, 0x00, 0x0F, 0x12, 0x1F, 0x10, 0x0F, 0x00, 0x00],
+            'Ø': [0x00, 0x00, 0x0E, 0x13, 0x15, 0x15, 0x15, 0x19, 0x0E, 0x00, 0x00],
+            'ø': [0x00, 0x00, 0x00, 0x00, 0x0E, 0x13, 0x15, 0x19, 0x0E, 0x00, 0x00],
+            'Ð': [0x00, 0x00, 0x1C, 0x12, 0x1F, 0x11, 0x11, 0x12, 0x1C, 0x00, 0x00],
+            'ð': [0x00, 0x00, 0x03, 0x04, 0x0D, 0x13, 0x11, 0x11, 0x0F, 0x00, 0x00],
+            'Þ': [0x00, 0x00, 0x10, 0x1E, 0x11, 0x11, 0x1E, 0x10, 0x10, 0x00, 0x00],
+            'þ': [0x00, 0x00, 0x10, 0x10, 0x1E, 0x11, 0x11, 0x1E, 0x10, 0x10, 0x00],
+            'Ý': [0x02, 0x04, 0x11, 0x11, 0x0A, 0x04, 0x04, 0x04, 0x04, 0x00, 0x00],
+            'ý': [0x02, 0x04, 0x00, 0x00, 0x11, 0x11, 0x11, 0x11, 0x0F, 0x01, 0x0E],
+
+            'Ŋ': [0x00, 0x00, 0x11, 0x19, 0x15, 0x13, 0x11, 0x13, 0x01, 0x01, 0x0E],
+
+            'ŋ': [0x00, 0x00, 0x00, 0x00, 0x16, 0x19, 0x11, 0x11, 0x13, 0x01, 0x0E],
+            'Ł': [0x00, 0x00, 0x10, 0x12, 0x14, 0x18, 0x10, 0x10, 0x1F, 0x00, 0x00],
+
+            'ł': [0x00, 0x00, 0x0C, 0x06, 0x04, 0x0C, 0x04, 0x04, 0x0E, 0x00, 0x00],
+
+            'É': [0x02, 0x04, 0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F, 0x00, 0x00],
+            'Ó': [0x02, 0x04, 0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'Á': [0x02, 0x04, 0x04, 0x0A, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x00, 0x00],
+
+            'é': [0x02, 0x04, 0x00, 0x00, 0x0E, 0x11, 0x1F, 0x10, 0x0E, 0x00, 0x00],
+            'ó': [0x02, 0x04, 0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E, 0x00, 0x00],
+            'á': [0x02, 0x04, 0x00, 0x00, 0x0E, 0x01, 0x0F, 0x11, 0x0F, 0x00, 0x00],
+        };
+
+        function getGlyphWidth(glyph) {
+
+            let width = 0;
+
+            for (const row of glyph) {
+
+                if (row === 0) {
+                    continue;
+                }
+
+                width = Math.max(
+                    width,
+                    Math.floor(
+                        Math.log2(row)
+                    ) + 1
+                );
+            }
+
+            return Math.max(width, 1);
+        }
+
+        function getGlyphBounds(glyph) {
+
+            let minBit = Infinity;
+            let maxBit = -1;
+
+            for (const row of glyph) {
+
+                for (
+                    let bit = 0;
+                    bit < 5;
+                    bit++
+                ) {
+
+                    if (
+                        row &
+                        (1 << (4 - bit))
+                    ) {
+
+                        minBit =
+                            Math.min(
+                                minBit,
+                                bit
+                            );
+
+                        maxBit =
+                            Math.max(
+                                maxBit,
+                                bit
+                            );
+                    }
+                }
+            }
+
+            if (maxBit < 0) {
+
+                return {
+                    offset: 0,
+                    width: 2
+                };
+            }
+
+            return {
+                offset: minBit,
+                width:
+                    maxBit -
+                    minBit +
+                    1
+            };
+        }
+
+        function measureBitmapText(text) {
+
+            let width = 0;
+
+            for (const ch of text) {
+
+                const glyph =
+                    FONT_5X11[ch] ||
+                    FONT_5X11[' '];
+
+                const bounds =
+                    getGlyphBounds(glyph);
+
+                width += bounds.width + 1;
+            }
+
+            return Math.max(
+                width - 1,
+                0
+            );
+        }
+
+        function renderBitmap5x11(slot, text) {
+
+            clearSlot(slot);
+
+            let cursorX =
+                Math.max(
+                    0,
+                    Math.floor(
+                        (
+                            WIDTH -
+                            measureBitmapText(text)
+                        ) / 2
+                    )
+                );
+
+            for (const ch of text) {
+
+                const glyph =
+                    FONT_5X11[ch] ||
+                    FONT_5X11[' '];
+
+                const bounds =
+                    getGlyphBounds(glyph);
+
+                for (
+                    let y = 0;
+                    y < glyph.length;
+                    y++
+                ) {
+
+                    for (
+                        let x = 0;
+                        x < bounds.width;
+                        x++
+                    ) {
+
+                        const sourceBit =
+                            bounds.offset + x;
+
+                        const bitIndex =
+                            4 - sourceBit;
+
+                        if (
+                            glyph[y] &
+                            (1 << bitIndex)
+                        ) {
+
+                            const px =
+                                cursorX + x;
+
+                            const py = y;
+
+                            if (
+                                px >= 0 &&
+                                px < WIDTH &&
+                                py >= 0 &&
+                                py < HEIGHT
+                            ) {
+
+                                slotImages
+                                [slot]
+                                [py]
+                                [px] = true;
+                            }
+                        }
+                    }
+                }
+
+                cursorX +=
+                    bounds.width + 1;
+
+                if (cursorX >= WIDTH) {
+                    break;
+                }
+            }
+
+            renderPixels(slot);
+            saveSlotImages();
+        }
+
+        function clearSlot(slot) {
+
+            for (const row of slotImages[slot]) {
+                row.fill(false);
+            }
+        }
+
+        function getFontDefinition(fontName) {
+
+            return FONT_DEFINITIONS[fontName]
+                || FONT_DEFINITIONS.sans;
+        }
+
+        function renderTextToSlot(slot, text) {
+
+            const fontInfo =
+                getFontDefinition(
+                    slotSettings[slot].font
+                );
+
+            if (fontInfo.renderer === 'bitmap') {
+
+                switch (slotSettings[slot].font) {
+
+                    case 'led5x7':
+                        renderBitmap5x11(
+                            slot,
+                            text
+                        );
+                        return;
+
+                    default:
+                        renderBitmap5x11(
+                            slot,
+                            text
+                        );
+                        return;
+                }
+            }
+
+            renderCanvasText(
+                slot,
+                text
+            );
+        }
+
+        function renderCanvasText(slot, text) {
+
+            const canvas =
+                document.createElement('canvas');
+
+            canvas.width = WIDTH;
+            canvas.height = HEIGHT;
+
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            ctx.fillStyle = 'white';
+
+            const fontInfo =
+                getFontDefinition(
+                    slotSettings[slot].font
+                );
+
+            ctx.font = fontInfo.font;
+            ctx.textBaseline = 'middle';
+
+            const metrics =
+                ctx.measureText(text);
+
+            ctx.fillText(
+                text,
+                Math.max(
+                    0,
+                    (WIDTH - metrics.width) / 2
+                ),
+                HEIGHT / 2
+            );
+
+            const imageData =
+                ctx.getImageData(
+                    0,
+                    0,
+                    WIDTH,
+                    HEIGHT
+                );
+
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+
+                    const index =
+                        (y * WIDTH + x) * 4;
+
+                    slotImages[slot][y][x] =
+                        imageData.data[index] > 128;
+                }
+            }
+
+            renderPixels(slot);
+            saveSlotImages();
+        }
+
+        function createSlotEditor(slot) {
+            const editor = document.createElement('article');
+            editor.className = 'slot-editor';
+            editor.innerHTML = `<div class="slot-header">
+                <h3>Slot ${slot + 1}</h3>
+                <label class="slot-active">
+                    <input class="slot-enabled" type="checkbox">
+                    Active
+                </label>
+            </div >
+
+            <div class="slot-controls">
+                <label>
+                    Content
+                    <select class="slot-content-type">
+                        <option value="draw">Draw</option>
+                        <option value="text">Text</option>
+                    </select>
+                </label>
+
+                <label>
+                    Speed
+                    <input class="slot-speed" type="number" min="0" max="7">
+                </label>
+
+                <label>
+                    Effect
+                    <select class="slot-effect">
+                        <option value="4">Fixed</option>
+                        <option value="0">Scroll left</option>
+                        <option value="1">Scroll right</option>
+                        <option value="2">Scroll up</option>
+                        <option value="3">Scroll down</option>
+                        <option value="5">Animation</option>
+                        <option value="6">Snowflake</option>
+                        <option value="7">Picture</option>
+                        <option value="8">Laser</option>
+                    </select>
+                </label>
+
+                <button class="slot-draw active">Draw</button>
+                <button class="slot-erase secondary">Erase</button>
+                <button class="slot-clear secondary">Clear</button>
+
+            </div>
+
+            <div class="slot-text-row">
+
+                <label>
+                    Font
+                    <select class="slot-font"></select>
+                </label>
+
+                <div class="font-preview">Abc</div>
+
+                <label>
+                    Text
+                    <input
+                        class="slot-text"
+                        type="text"
+                        maxlength="20"
+                        placeholder="Enter text">
+                </label>
+
+            </div>
+        `;
+            const grid = document.createElement('div');
+            grid.className = 'pixel-grid';
+            grid.setAttribute('aria-label', `44 by 11 LED drawing grid for slot ${slot + 1}`);
+            editor.append(grid);
+            const enabled = editor.querySelector('.slot-enabled');
+            const speed = editor.querySelector('.slot-speed');
+            const effect = editor.querySelector('.slot-effect');
+            const draw = editor.querySelector('.slot-draw');
+            const erase = editor.querySelector('.slot-erase');
+            const contentType = editor.querySelector('.slot-content-type');
+            const textInput = editor.querySelector('.slot-text');
+            const textRow = editor.querySelector('.slot-text-row');
+            const fontSelect = editor.querySelector('.slot-font');
+
+            for (const [key, fontInfo] of Object.entries(FONT_DEFINITIONS)) {
+
+                const option =
+                    document.createElement('option');
+
+                option.value = key;
+                option.textContent = fontInfo.label;
+                option.style.font = fontInfo.font;
+
+                fontSelect.appendChild(option);
+            }
+            fontSelect.value = slotSettings[slot].font;
+
+            const fontPreview = editor.querySelector('.font-preview');
+
+            function updateFontPreview() {
+
+                fontPreview.textContent = 'Abc123';
+
+                const fontInfo =
+                    getFontDefinition(
+                        fontSelect.value
+                    );
+
+                if (fontInfo.renderer === 'bitmap') {
+
+                    fontPreview.style.font =
+                        'bold 9px monospace';
+
+                    fontPreview.style.background =
+                        '#f4c542';
+
+                } else {
+
+                    fontPreview.style.font =
+                        fontInfo.font;
+
+                    fontPreview.style.background =
+                        'white';
+                }
+            }
+
+            updateFontPreview();
+
+
+
+            function updateSlotEnabledState() {
+                editor.classList.toggle(
+                    'disabled',
+                    !slotSettings[slot].enabled
+                );
+            }
+
+
+
+            enabled.checked = slotSettings[slot].enabled;
+            updateSlotEnabledState();
+
+            speed.value = slotSettings[slot].speed;
+            effect.value = slotSettings[slot].mode;
+
+            contentType.value = slotSettings[slot].contentType;
+            textInput.value = slotSettings[slot].text;
+
+            fontSelect.value = slotSettings[slot].font;
+            textRow.classList.toggle(
+                'hidden',
+                slotSettings[slot].contentType !== 'text'
+            );
+
+            draw.classList.toggle('active', slotSettings[slot].drawMode === 'draw');
+            erase.classList.toggle('active', slotSettings[slot].drawMode === 'erase');
+            draw.addEventListener('click', () => { slotSettings[slot].drawMode = 'draw'; draw.classList.add('active'); erase.classList.remove('active'); saveSlotSettings(); });
+            erase.addEventListener('click', () => { slotSettings[slot].drawMode = 'erase'; erase.classList.add('active'); draw.classList.remove('active'); saveSlotSettings(); });
+            enabled.addEventListener('change', () => {
+                slotSettings[slot].enabled = enabled.checked;
+                updateSlotEnabledState();
+                saveSlotSettings();
+                updateSendButtonText();
+            });
+
+            speed.addEventListener('change', () => { slotSettings[slot].speed = Math.max(0, Math.min(7, Number(speed.value) || 0)); speed.value = slotSettings[slot].speed; saveSlotSettings(); });
+
+            contentType.addEventListener('change', () => {
+
+                slotSettings[slot].contentType =
+                    contentType.value;
+
+                textRow.classList.toggle(
+                    'hidden',
+                    contentType.value !== 'text'
+                );
+
+                saveSlotSettings();
+            });
+            textInput.addEventListener('input', () => {
+
+                slotSettings[slot].text =
+                    textInput.value;
+
+                saveSlotSettings();
+                updateFontPreview();
+
+                if (
+                    slotSettings[slot].contentType ===
+                    'text'
+                ) {
+                    renderTextToSlot(
+                        slot,
+                        textInput.value
+                    );
+                }
+            });
+
+            fontSelect.addEventListener('change', () => {
+
+                slotSettings[slot].font =
+                    fontSelect.value;
+
+                saveSlotSettings();
+                updateFontPreview();
+
+                if (textInput.value) {
+                    renderTextToSlot(
+                        slot,
+                        textInput.value
+                    );
+                }
+            });
+
+            effect.addEventListener('change', () => { slotSettings[slot].mode = Number(effect.value); saveSlotSettings(); });
+            editor.querySelector('.slot-clear').addEventListener('click', () => { for (const row of slotImages[slot]) row.fill(false); slotConfigured[slot] = true; saveSlotImages(); renderPixels(slot); });
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    const pixel = document.createElement('button');
+                    pixel.type = 'button'; pixel.className = 'pixel'; pixel.dataset.x = x; pixel.dataset.y = y;
+                    pixel.addEventListener('pointerdown', event => { event.preventDefault(); drawing = true; paint(pixel, slot); });
+                    grid.append(pixel);
+                }
+            }
+
+
+
+            grid.addEventListener('pointermove', event => { if (drawing) { const pixel = event.target.closest('.pixel'); if (pixel) paint(pixel, slot); } });
+            slotEditors.append(editor);
+            slotEditorsByIndex[slot] = { grid };
+            renderPixels(slot);
+            if (
+                slotSettings[slot].contentType === 'text' &&
+                slotSettings[slot].text
+            ) {
+                renderTextToSlot(
+                    slot,
+                    slotSettings[slot].text
+                );
+            }
+        }
+        for (let slot = 0; slot < 8; slot++) createSlotEditor(slot);
+
+        updateSendButtonText();
+
+        window.addEventListener('pointerup', () => { drawing = false; });
+
+        function wait(milliseconds) {
+            return new Promise(resolve => setTimeout(resolve, milliseconds));
+        }
+
+        async function connectSelectedDevice() {
+            if (!bluetoothDevice) throw new Error('No device selected.');
+            const server = await bluetoothDevice.gatt.connect();
+            const service = await server.getPrimaryService(FEE0);
+            writeCharacteristic = await service.getCharacteristic(FEE1);
+            if (!writeCharacteristic.properties.write && !writeCharacteristic.properties.writeWithoutResponse) {
+                throw new Error('FEE1 is not writable.');
+            }
+            sendButton.disabled = false;
+            disconnectButton.disabled = false;
+            setStatus('Connected and ready to send.', 'success');
+        }
+
+        async function reconnect() {
+            if (reconnecting || manualDisconnect || !bluetoothDevice) return;
+            reconnecting = true;
+            try {
+                for (let attempt = 1; attempt <= 10 && !manualDisconnect; attempt++) {
+                    const delay = Math.min(500 * (2 ** (attempt - 1)), 8000);
+                    setStatus(`Reconnecting in ${delay} ms(${attempt} / 10)...`);
+                    await wait(delay);
+                    try {
+                        await connectSelectedDevice();
+                        return;
+                    } catch (error) {
+                        setStatus(`Reconnect attempt ${attempt} failed: ${error.message} `, 'error');
+                    }
+                }
+                setStatus('Reconnect attempts exhausted. Scan again to select the device.', 'error');
+            } finally {
+                reconnecting = false;
+            }
+        }
+
+        let watchedDevice = null;
+        let disconnectHandler = null;
+
+        function watchDisconnect(device) {
+            if (watchedDevice === device) return;
+            if (watchedDevice && disconnectHandler) {
+                watchedDevice.removeEventListener('gattserverdisconnected', disconnectHandler);
+            }
+            watchedDevice = device;
+            disconnectHandler = () => {
+                writeCharacteristic = null;
+                sendButton.disabled = true;
+                disconnectButton.disabled = true;
+                if (!manualDisconnect) reconnect();
+            };
+            device.addEventListener('gattserverdisconnected', disconnectHandler);
+        }
+
+        async function connect() {
+            if (!navigator.bluetooth) {
+                setStatus('Web Bluetooth requires a compatible Chromium browser on localhost or HTTPS.', 'error');
+                return;
+            }
+            try {
+                manualDisconnect = false;
+                setStatus('Opening LSLED device chooser...');
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [
+                        { namePrefix: 'LSLED' },
+                        { services: [FEE0] }
+                    ],
+                    optionalServices: [FEE0]
+                });
+                deviceNameElement.textContent = bluetoothDevice.name || 'LSLED';
+                watchDisconnect(bluetoothDevice);
+                await connectSelectedDevice();
+            } catch (error) {
+                setStatus(`${error.name || 'BLE error'}: ${error.message} `, 'error');
+            }
+        }
+
+        function buildFrame() {
+            const chunkCount = Math.ceil(WIDTH / 8);
+            const bitmapBytesPerSlot = chunkCount * HEIGHT;
+
+            const activeSlots = [];
+
+            for (let slot = 0; slot < 8; slot++) {
+                if (!slotConfigured[slot]) continue;
+                if (!slotSettings[slot].enabled) continue;
+                activeSlots.push(slot);
+            }
+
+            const frame =
+                new Uint8Array(0x40 + bitmapBytesPerSlot * activeSlots.length);
+
+            const brightness = Number(brightnessValueInput.value);
+
+            if (
+                !Number.isInteger(brightness) ||
+                brightness < 0 ||
+                brightness > 255
+            ) {
+                throw new Error('Brightness must be an integer from 0 to 255.');
+            }
+
+            frame.set([
+                0x77,
+                0x61,
+                0x6e,
+                0x67,
+                0x00,
+                brightness
+            ]);
+
+            let bitmapOffset = 0x40;
+
+            activeSlots.forEach((slot, activeIndex) => {
+
+                frame[8 + activeIndex] =
+                    (slotSettings[slot].speed << 4) |
+                    slotSettings[slot].mode;
+
+                frame[0x10 + activeIndex * 2] =
+                    chunkCount >> 8;
+
+                frame[0x11 + activeIndex * 2] =
+                    chunkCount & 0xff;
+
+                const image = slotImages[slot];
+
+                for (let chunk = 0; chunk < chunkCount; chunk++) {
+
+                    for (let y = 0; y < HEIGHT; y++) {
+
+                        let value = 0;
+
+                        for (let bit = 0; bit < 8; bit++) {
+
+                            const x = chunk * 8 + bit;
+
+                            if (
+                                x < WIDTH &&
+                                image[y][x]
+                            ) {
+                                value |= (1 << (7 - bit));
+                            }
+                        }
+
+                        frame[
+                            bitmapOffset +
+                            chunk * HEIGHT +
+                            y
+                        ] = value;
+                    }
+                }
+
+                bitmapOffset += bitmapBytesPerSlot;
+            });
+
+            return frame;
+        }
+
+        async function sendFrame() {
+            if (!writeCharacteristic) return;
+            sendButton.disabled = true;
+            try {
+                const frame = buildFrame();
+                const packets = Math.ceil(frame.length / 16);
+                for (let packet = 0; packet < packets; packet++) {
+                    const data = new Uint8Array(16);
+                    data.set(frame.subarray(packet * 16, packet * 16 + 16));
+                    let failure;
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                        try {
+                            if (writeCharacteristic.properties.writeWithoutResponse) await writeCharacteristic.writeValueWithoutResponse(data);
+                            else await writeCharacteristic.writeValueWithResponse(data);
+                            failure = null;
+                            break;
+                        } catch (error) {
+                            failure = error;
+                            await wait(100);
+                        }
+                    }
+                    if (failure) throw new Error(`packet ${packet + 1}/${packets}: ${failure.message}`);
+                    await wait(35);
+                }
+                setStatus(`All configured images sent in ${packets} packets.`, 'success');
+            } catch (error) {
+                setStatus(`Image send failed: ${error.message}`, 'error');
+            } finally {
+                sendButton.disabled = !writeCharacteristic;
+            }
+        }
+
+        scanButton.addEventListener('click', connect);
+        sendButton.addEventListener('click', sendFrame);
+        disconnectButton.addEventListener('click', () => {
+            manualDisconnect = true;
+            writeCharacteristic = null;
+            sendButton.disabled = true;
+            disconnectButton.disabled = true;
+            if (bluetoothDevice?.gatt?.connected) bluetoothDevice.gatt.disconnect();
+            setStatus('Disconnected.', 'error');
+        });
+        window.addEventListener('beforeunload', () => {
+            try { saveSlotImages(true); } catch (_) { }
+        });
+
+    </script>
+</body>
+
+</html>

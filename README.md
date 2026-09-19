@@ -86,6 +86,14 @@ http://127.0.0.1:8080
 
 in a Chromium-based browser such as Google Chrome or Microsoft Edge.
 
+## Hosted Version
+
+A live version of the controller is available at:
+
+[LSLED Controller](https://5inf.github.io/lsled_controller/)
+
+Because the site is served over HTTPS, it can use Web Bluetooth directly without requiring a local web server.
+
 ## Storage
 
 The controller stores the following information locally in the browser:

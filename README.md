@@ -37,7 +37,7 @@ The application allows you to draw images, create text messages, configure anima
   - Microsoft Edge
   - Chromium
 - HTTPS or localhost
-- An LSLED badge supporting the legacy FEE0/FEE1 protocol
+- An LSLED badge supporting the legacy FEE0/FEE1 protocol, e.g. from [OpenElab](https://openelab.io/): [Wireless Bluetooth LED Name Badge 11x44 DIY Reusable](https://openelab.io/products/wireless-bluetooth-led-name-badge).
 
 ## Usage
 
